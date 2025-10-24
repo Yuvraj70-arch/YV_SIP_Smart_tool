@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>YV Factor — Cinematic SIP Toolkit</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{
+  --bg:#07121a; --gold:#FFD066; --gold-2:#FFB948; --muted:#bfc7d1;
+  --card-shadow:0 14px 40px rgba(2,8,12,.6); --input-border:1px solid rgba(255,215,102,.15);
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0;background:var(--bg);color:#fff;font-family:"Poppins",sans-serif}
+.bg-wrap{position:fixed;inset:0;z-index:-5;overflow:hidden}
+.bg-grad{position:absolute;inset:-30% -20% -20% -30%;background:
+  radial-gradient(900px 300px at 10% 12%,rgba(255,208,80,.03),transparent 8%),
+  linear-gradient(120deg,rgba(255,200,80,.02),rgba(255,160,40,.01));
+  animation:f 28s linear infinite;mix-blend-mode:screen;opacity:.95}
+@keyframes f{0%{transform:translate(-8%,0) rotate(0)}50%{transform:translate(8%,0) rotate(1deg)}100%{transform:translate(-8%,0) rotate(0)}}
+.navbar{display:flex;background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));
+  border-bottom:1px solid rgba(255,215,102,.06);padding:12px 18px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.logo{width:48px;height:48px;border-radius:10px;display:grid;place-items:center;font-weight:700;color:var(--gold);font-size:18px;
+  background:linear-gradient(145deg,rgba(255,208,60,.12),rgba(255,160,20,.04))}
+.h1{font-size:1.12rem;color:var(--gold);margin:0}
+.nav-links{display:flex;gap:12px;flex-wrap:wrap}
+.nav-link{padding:8px 16px;border-radius:8px;color:var(--muted);text-decoration:none;transition:.2s;cursor:pointer;font-size:.9rem}
+.nav-link.active{background:linear-gradient(90deg,var(--gold),var(--gold-2));color:#072026;font-weight:600;box-shadow:0 4px 12px rgba(255,180,40,.2)}
+.content{flex:1;display:grid;gap:20px;padding:18px;overflow-y:auto;height:calc(100vh-80px)}
+@media(max-width:768px){.content{padding:12px}.nav-links{order:3;width:100%;justify-content:center;margin-top:12px}}
+.phase{display:none;animation:fade .5s ease-in}.phase.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.card{background:linear-gradient(180deg,rgba(255,255,255,.02),rgba(255,255,255,.01));
+  border:1px solid rgba(255,215,102,.06);border-radius:14px;padding:16px;box-shadow:var(--card-shadow)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.label{display:block;color:var(--muted);font-size:.85rem;margin-bottom:8px}
+.input{width:100%;padding:12px;border-radius:10px;border:var(--input-border);background:rgba(255,255,255,.01);
+  color:#fff;font-size:1rem;transition:border .2s}
+.input:focus{border-color:var(--gold);outline:none}
+.row{display:flex;gap:12px;align-items:center;margin-top:12px;flex-wrap:wrap}
+.btn{background:linear-gradient(180deg,#FFD66F,#FFB948);color:#072026;padding:10px 14px;border-radius:12px;
+  border:none;font-weight:700;cursor:pointer;box-shadow:0 8px 24px rgba(255,180,40,.06)}
+.btn.ghost{background:transparent;border:1px solid rgba(255,255,255,.04);color:var(--muted)}
+.kpi{display:flex;justify-content:space-between;align-items:center;padding:10px;border-radius:10px;
+  background:linear-gradient(180deg,rgba(255,255,255,.01),rgba(255,255,255,.005));
+  border:1px solid rgba(255,255,255,.02);margin-bottom:8px}
+.kpi.highlight{background:linear-gradient(90deg,rgba(255,208,102,.15),rgba(255,185,72,.1));
+  border-color:var(--gold);box-shadow:0 4px 12px rgba(255,208,102,.2)}
+.chart-wrap{display:flex;align-items:center;justify-content:center;padding:8px;height:260px;position:relative}
+.progress-wrap{height:4px;background:rgba(255,255,255,.05);border-radius:2px;margin:12px 0;overflow:hidden}
+.progress{height:100%;background:var(--gold);width:0;transition:width .4s ease}
+.profile-btn{padding:8px 16px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,215,102,.1);color:var(--muted);cursor:pointer;margin-right:8px}
+.profile-btn.active{background:var(--gold);color:#072026;font-weight:600}
+.advice{margin-top:12px;padding:12px;background:rgba(255,255,255,.02);border-radius:10px;border:1px solid rgba(255,215,102,.1)}
+.advice .title{font-weight:700;color:var(--gold);margin-bottom:6px}
+.disclaimer{font-size:0.75rem;color:#6b7280;text-align:center;margin-top:24px;padding:12px;border-top:1px solid rgba(255,215,102,.1)}
+.rebalance-plan{margin-top:12px;font-size:0.9rem}
+.stage{margin-bottom:12px;padding:10px;background:rgba(255,255,255,.02);border-radius:8px}
+.stage-title{font-weight:600;color:var(--gold);margin-bottom:6px}
+.qcard{padding:20px;background:rgba(255,255,255,.02);border-radius:12px;border:1px solid rgba(255,215,102,.1);margin:16px 0}
+.qinner .question{font-weight:600;margin-bottom:12px}
+.options{display:flex;flex-direction:column;gap:10px}
+.opt{padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.04);background:rgba(255,255,255,.01);cursor:pointer;transition:.2s}
+.opt:hover{transform:translateY(-3px);background:rgba(255,208,102,.1)}
+</style>
+</head>
+<body>
+<div class="bg-wrap"><div class="bg-grad"></div></div>
+
+<div class="navbar">
+  <div class="header"><div class="logo">YV</div><h1 class="h1">YV Factor Toolkit</h1></div>
+  <div class="nav-links">
+    <a href="#" class="nav-link active" data-phase="1">1. SIP Goal Planner</a>
+    <a href="#" class="nav-link" data-phase="2">2. Performance Tracker</a>
+    <a href="#" class="nav-link" data-phase="3">3. Diversification Meter</a>
+    <a href="#" class="nav-link" data-phase="5">5. Investor DNA</a>
+    <a href="#" class="nav-link" data-phase="6">6. Wealth Visualizer</a>
+  </div>
+</div>
+
+<div class="content">
+
+<!-- PHASE 1 -->
+<div id="phase1" class="phase active card">
+  <h2 class="h1">SIP Goal Planner</h2>
+  <p class="lead">Calculate monthly SIP with cinematic ring.</p>
+  <div class="form-grid">
+    <div><label class="label">Goal Amount (₹)</label><input class="input" id="goal1" type="number" value="1000000"></div>
+    <div><label class="label">Years</label><input class="input" id="years1" type="number" value="10"></div>
+    <div><label class="label">Expected Return (%)</label><input class="input" id="return1" type="number" value="12"></div>
+    <div><label class="label">Inflation (%)</label><input class="input" id="inflRate1" type="number" step="0.1" value="6"></div>
+  </div>
+  <div class="row"><button class="btn" id="calc1">Calculate</button><button class="btn ghost" id="next1">Next</button></div>
+  <div id="result1" style="display:none;margin-top:16px;">
+    <div class="kpi"><span class="left">Monthly SIP</span><span class="val" id="monthly1">—</span></div>
+    <div class="kpi"><span class="left">Total Invested</span><span class="val" id="invested1">—</span></div>
+    <div class="kpi"><span class="left">Projected Value</span><span class="val" id="value1">—</span></div>
+    <div class="chart-wrap"><canvas id="chart1"></canvas></div>
+    <div class="disclaimer">This is an estimate. Actual returns may vary. Consult a financial advisor for personalized advice.</div>
+  </div>
+</div>
+
+<!-- PHASE 2 -->
+<div id="phase2" class="phase card">
+  <h2 class="h1">SIP Performance Tracker</h2>
+  <p class="lead">Track your SIP's CAGR with dynamic ring.</p>
+  <div class="form-grid">
+    <div><label class="label">Total Invested (₹)</label><input class="input" id="invested2" type="number" value="120000"></div>
+    <div><label class="label">Current Value (₹)</label><input class="input" id="current2" type="number" value="160000"></div>
+    <div><label class="label">Duration (Years)</label><input class="input" id="duration2" type="number" value="3"></div>
+  </div>
+  <div class="row"><button class="btn" id="calc2">Check Performance</button><button class="btn ghost" id="next2">Next</button></div>
+  <div id="result2" style="display:none;margin-top:16px;">
+    <div class="kpi highlight"><span class="left">CAGR</span><span class="val" id="cagr2">—</span></div>
+    <div class="kpi highlight"><span class="left">Status</span><span class="val" id="status2">—</span></div>
+    <div class="chart-wrap"><canvas id="chart2"></canvas></div>
+    <div class="disclaimer">This is an estimate. Actual returns may vary. Consult a financial advisor for personalized advice.</div>
+  </div>
+</div>
+
+<!-- PHASE 3 -->
+<div id="phase3" class="phase card">
+  <h2 class="h1">Diversification Meter</h2>
+  <p class="lead">Profile-driven allocation check.</p>
+  <div id="profiles3" style="margin-bottom:12px;"></div>
+  <div class="form-grid">
+    <div><label class="label">Equity (₹)</label><input class="input" id="equity3" type="number" value="312000"></div>
+    <div><label class="label">Debt (₹)</label><input class="input" id="debt3" type="number" value="0"></div>
+    <div><label class="label">Gold (₹)</label><input class="input" id="gold3" type="number" value="900000"></div>
+    <div><label class="label">Other (₹)</label><input class="input" id="other3" type="number" value="0"></div>
+  </div>
+  <div class="row"><button class="btn" id="calc3">Analyze</button><button class="btn ghost" id="next3">Next</button></div>
+  <div id="result3" style="display:none;margin-top:16px;">
+    <div class="chart-wrap"><canvas id="chart3"></canvas></div>
+    <div class="kpi"><span class="left">Alignment Score</span><span class="val" id="score3">—</span></div>
+    <div class="advice" id="advice3"></div>
+    <div class="disclaimer">This is an estimate. Actual returns may vary. Consult a financial advisor for personalized advice.</div>
+  </div>
+</div>
+
+<!-- PHASE 5 -->
+<div id="phase5" class="phase card">
+  <h2 class="h1">Investor DNA Checker</h2>
+  <p class="lead">Discover your risk profile.</p>
+  <div class="progress-wrap"><div class="progress" id="bar5"></div></div>
+  <div class="qcard"><div class="qinner" id="qinner5">Click Start to begin.</div></div>
+  <div class="row"><button class="btn" id="start5">Start Quiz</button><button class="btn ghost" id="next5">Next</button></div>
+  <div id="result5" style="display:none;margin-top:16px;">
+    <div class="profile-label" id="profile5" style="font-size:1.2rem;color:var(--gold);font-weight:700"></div>
+    <div class="profile-desc" id="desc5" style="margin:8px 0"></div>
+    <div class="chart-wrap"><canvas id="chart5"></canvas></div>
+    <div class="disclaimer">This is an estimate. Actual returns may vary. Consult a financial advisor for personalized advice.</div>
+  </div>
+</div>
+
+<!-- PHASE 6 -->
+<div id="phase6" class="phase card">
+  <h2 class="h1">Wealth Visualizer + Advisor</h2>
+  <p class="lead">Visualize outcomes and get advice on continue/pause/stop/switch.</p>
+  <div class="form-grid">
+    <div><label class="label">Monthly SIP (₹)</label><input class="input" id="sip6" type="number" value="10000"></div>
+    <div><label class="label">Goal Years</label><input class="input" id="goal6" type="number" value="10"></div>
+    <div><label class="label">Months Held (optional)</label><input class="input" id="held6" type="number" value="0"></div>
+    <div><label class="label">Current Value (optional)</label><input class="input" id="current6" type="number" value="0"></div>
+    <div style="grid-column:1/-1"><label class="label">Fund Type</label>
+      <select class="input" id="fund6">
+        <option value="equity">Equity</option>
+        <option value="hybrid">Hybrid</option>
+        <option value="debt">Debt</option>
+      </select>
+    </div>
+  </div>
+  <div class="row"><button class="btn" id="calc6">Visualize & Advise</button></div>
+  <div id="result6" style="display:none;margin-top:16px;">
+    <div class="chart-wrap"><canvas id="chart6"></canvas></div>
+    <div class="kpi"><span class="left">Invested</span><span class="val" id="invested6">—</span></div>
+    <div class="kpi"><span class="left">Continue (nominal)</span><span class="val" id="cont6">—</span></div>
+    <div class="kpi"><span class="left">Stop (nominal)</span><span class="val" id="stop6">—</span></div>
+    <div class="kpi"><span class="left">Continue (real)</span><span class="val" id="real6">—</span></div>
+    <div class="kpi"><span class="left">Loss if stopped</span><span class="val" id="loss6">—</span></div>
+    <div class="kpi"><span class="left">Tax Impact</span><span class="val" id="tax6">—</span></div>
+    <div class="verdict" id="verdict6" style="display:none">
+      <div class="title" id="title6" style="font-size:1.2remvote;color:var(--gold);font-weight:800"></div>
+      <div id="reason6"></div>
+    </div>
+    <div class="disclaimer">This is an estimate. Actual returns may vary. Consult a financial advisor for personalized advice.</div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// GLOBAL
+const dataFlow = { sipMonthly:10000, riskProfile:'moderate' };
+const QUESTIONS = [
+  {q:'How do you feel about market drops?',opts:['Panic sell','Hold steady','Buy more'],vals:[0,1,2]},
+  {q:'Your investment horizon?',opts:['Short (<3 yrs)','Medium (3-7 yrs)','Long (>7 yrs)'],vals:[0,1,2]},
+  {q:'Comfort with volatility?',opts:['Low','Moderate','High'],vals:[0,1,2]},
+  {q:'Financial goal priority?',opts:['Safety','Balance','Growth'],vals:[0,1,2]},
+  {q:'Experience with investing?',opts:['None','Some','Expert'],vals:[0,1,2]}
+];
+
+// NAVIGATION
+document.querySelectorAll('.nav-link').forEach(l=>l.addEventListener('click',e=>{
+  e.preventDefault();
+  document.querySelectorAll('.nav-link').forEach(x=>x.classList.remove('active'));
+  l.classList.add('active');
+  document.querySelectorAll('.phase').forEach(p=>p.classList.remove('active'));
+  document.getElementById(`phase${l.dataset.phase}`).classList.add('active');
+}));
+
+// UTILS
+function toINR(x){return isFinite(x)&&x>=0?'₹'+Number(x).toLocaleString('en-IN',{maximumFractionDigits:0}):'—';}
+function animateNum(el,start,end,dur=1200){
+  const st=performance.now();
+  const tick=n=>{const t=Math.min(1,(n-st)/dur);const v=start+(end-start)*(1-Math.pow(1-t,3));el.textContent=toINR(Math.round(v));if(t<1)requestAnimationFrame(tick);};
+  requestAnimationFrame(tick);
+}
+function scrollToResult(resultId){
+  document.getElementById(resultId).scrollIntoView({behavior:'smooth',block:'center'});
+}
+
+/* ==== PHASE 1 ==== */
+const ring1 = new Chart(document.getElementById('chart1'), {
+  type: 'doughnut',
+  data: { datasets: [{ data: [100, 0], backgroundColor: ['rgba(255,255,255,0.1)', '#FFD066'], borderWidth: 0, borderRadius: 12, cutout: '75%', hoverOffset: 16 }] },
+  options: { responsive: true, plugins: { legend: { display: false } }, animation: { animateRotate: true, duration: 1800 } },
+  plugins: [{
+    id: 'centerText',
+    afterDraw: chart => {
+      const ctx = chart.ctx; const w = chart.width, h = chart.height;
+      ctx.save(); ctx.font = 'bold 1.2rem Poppins'; ctx.fillStyle = '#FFD066'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('Growth', w/2, h/2 - 10); ctx.font = '0.9rem Poppins'; ctx.fillStyle = '#fff'; ctx.fillText('vs Invested', w/2, h/2 + 12); ctx.restore();
+    }
+  }]
+});
+document.getElementById('calc1').onclick = () => {
+  const goal = +document.getElementById('goal1').value;
+  const years = +document.getElementById('years1').value;
+  const rate = +document.getElementById('return1').value / 100;
+  const infl = +document.getElementById('inflRate1').value / 100;
+  const futureGoal = goal * Math.pow(1 + infl, years);
+  const monthlyRate = rate / 12;
+  const months = years * 12;
+  const sip = futureGoal * monthlyRate / (Math.pow(1 + monthlyRate, months) - 1);
+  const totalInvested = sip * months;
+  const projected = totalInvested * Math.pow(1 + rate, years);
+  document.getElementById('result1').style.display = 'block';
+  scrollToResult('result1');
+  animateNum(document.getElementById('monthly1'), 0, sip);
+  animateNum(document.getElementById('invested1'), 0, totalInvested);
+  animateNum(document.getElementById('value1'), 0, projected);
+  ring1.data.datasets[0].data = [totalInvested, projected - totalInvested];
+  ring1.update();
+};
+document.getElementById('next1').onclick = () => document.querySelector('[data-phase="2"]').click();
+
+/* ==== PHASE 2 ==== */
+const ring2 = new Chart(document.getElementById('chart2'), {
+  type: 'doughnut',
+  data: { datasets: [{ data: [0, 100], backgroundColor: ['rgba(255,255,255,0.1)', '#FFDFFD066'], borderWidth: 0, borderRadius: 10, cutout: '70%', circumference: 280, rotation: 230 }] },
+  options: { responsive: true, plugins: { legend: { display: false } }, animation: { animateRotate: true, duration: 1400 } },
+  plugins: [{
+    id: 'cagrRing',
+    afterDraw: chart => {
+      const ctx = chart.ctx; const w = chart.width, h = chart.height;
+      const cagr = document.getElementById('cagr2').textContent || '0%';
+      const status = document.getElementById('status2').textContent || '';
+      ctx.save(); ctx.font = 'bold 1.5rem Poppins'; ctx.fillStyle = '#FFD066'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(cagr, w/2, h/2 - 10); ctx.font = '0.9rem Poppins'; ctx.fillStyle = '#fff'; ctx.fillText(status, w/2, h/2 + 15); ctx.restore();
+    }
+  }]
+});
+document.getElementById('calc2').onclick = () => {
+  const invested = +document.getElementById('invested2').value;
+  const current = +document.getElementById('current2').value;
+  const years = +document.getElementById('duration2').value;
+  const cagr = Math.pow(current / invested, 1 / years) - 1;
+  const status = cagr >= 0.12 ? 'Excellent' : cagr >= 0.08 ? 'Good' : cagr >= 0.05 ? 'Average' : 'Below Average';
+  document.getElementById('result2').style.display = 'block';
+  scrollToResult('result2');
+  document.getElementById('cagr2').textContent = '0%'; 
+  animateNum(document.getElementById('cagr2'), 0, cagr * 100, 1000); 
+  setTimeout(() => { document.getElementById('cagr2').textContent = (cagr * 100).toFixed(2) + '%'; }, 1000);
+  document.getElementById('status2').textContent = status;
+  const progress = Math.min(cagr * 100 / 0.20, 1) * 280;
+  ring2.data.datasets[0].data = [280 - progress, progress];
+  ring2.update();
+};
+document.getElementById('next2').onclick = () => document.querySelector('[data-phase="3"]').click();
+
+/* ==== PHASE 3 ==== */
+const pie3 = new Chart(document.getElementById('chart3'), { 
+  type: 'pie', 
+  data: { labels: ['Equity','Debt','Gold','Other'], datasets: [{ data: [0,0,0,0], backgroundColor: ['#FFD066','#3FB0FF','#C7922E','#8B5CF6'] }] }, 
+  options: { responsive: true } 
+});
+const profiles = [
+  {key:'conservative',alloc:{eq:20,debt:60,gold:15,other:5},desc:'Safety first'},
+  {key:'moderate',alloc:{eq:50,debt:30,gold:10,other:10},desc:'Balanced'},
+  {key:'aggressive',alloc:{eq:70,debt:20,gold:5,other:5},desc:'Growth-focused'}
+];
+let activeProf = 'moderate';
+profiles.forEach(p=>{ 
+  const b=document.createElement('button'); b.className='profile-btn'; b.textContent=p.key.charAt(0).toUpperCase()+p.key.slice(1);
+  b.onclick=()=>{document.querySelectorAll('.profile-btn').forEach(x=>x.classList.remove('active'));b.classList.add('active');activeProf=p.key;}; 
+  if(p.key==='moderate')b.classList.add('active');
+  document.getElementById('profiles3').appendChild(b);
+});
+document.getElementById('calc3').onclick = () => {
+  const currentAmt = ['equity3','debt3','gold3','other3'].map(id=>+document.getElementById(id).value);
+  const total = currentAmt.reduce((a,b)=>a+b,0);
+  const percs = currentAmt.map(v=>total?(v/total*100).toFixed(2):0);
+  pie3.data.datasets[0].data = percs; pie3.update();
+  const target = profiles.find(p=>p.key===activeProf).alloc;
+  const score = 100 - [percs[0]-target.eq, percs[1]-target.debt, percs[2]-target.gold, percs[3]-target.other].reduce((a,b)=>a+Math.abs(b),0);
+  document.getElementById('score3').textContent = `${Math.round(score)}%`;
+
+  const advice = generateDetailedAdvice(currentAmt, percs, target, total, activeProf);
+  document.getElementById('advice3').innerHTML = advice;
+  document.getElementById('result3').style.display = 'block';
+  scrollToResult('result3');
+};
+function generateDetailedAdvice(currentAmt, p, t, total, prof) {
+  const targetAmt = { eq: total * t.eq / 100, debt: total * t.debt / 100, gold: total * t.gold / 100, other: total * t.other / 100 };
+  const moves = [];
+  if (targetAmt.eq > currentAmt[0]) moves.push({ from: 'gold', to: 'Equity', amt: Math.round(targetAmt.eq - currentAmt[0]) });
+  if (targetAmt.debt > currentAmt[1]) moves.push({ from: 'gold', to: 'Debt', amt: Math.round(targetAmt.debt - currentAmt[1]) });
+  if (targetAmt.other > currentAmt[3]) moves.push({ from: 'gold', to: 'Others', amt: Math.round(targetAmt.other - currentAmt[3]) });
+  const plan = moves.reduce((acc, m) => { acc[m.to] = (acc[m.to] || 0) + m.amt; return acc; }, {});
+  const stages = [0.4, 0.3, 0.3];
+  let html = `<div class="title">Target ranges vs Your allocation</div><p><strong>${prof.charAt(0).toUpperCase()+prof.slice(1)}</strong><br>Equity ${p[0]}% | Debt ${p[1]}% | Gold ${p[2]}% | Others ${p[3]}%`;
+  html += `<br><strong>${prof} — midpoint target: ${t.eq}/${t.debt}/${t.gold}/${t.other} %</strong><br>${profiles.find(p=>p.key===prof).desc}.</p>`;
+  html += `<p><strong>Portfolio total: ${toINR(total)}. Your allocation: Equity ${p[0]}%, Debt ${p[1]}%, Gold ${p[2]}%, Others ${p[3]}%</strong></p>`;
+  if (moves.length) {
+    html += `<p><strong>Suggested rebalancing (total ₹ amounts):</strong></p><ul>`;
+    moves.forEach(m => html += `<li>Move ${toINR(m.amt)} from Gold → ${m.to}</li>`);
+    html += `</ul><div class="rebalance-plan"><strong>3-step staged rebalancing plan</strong><br>Plan split: 40% / 30% / 30% — staggered to reduce timing risk.<br>`;
+    stages.forEach((pct, i) => {
+      const stageNum = i+1;
+      html += `<div class="stage"><div class="stage-title">Stage ${stageNum} — ${pct*100}% (${i===0?'Now / Week 1':i===1?'Week 3–4':'Month 2'})</div>`;
+      Object.keys(plan).forEach(to => {
+        const amt = Math.round(plan[to] * pct);
+        html += `<div>${toINR(amt)} → Gold → ${to}<br><small>${i===0?'Now / Week 1':i===1?'Week 3–4':'Month 2'}</small></div>`;
+      });
+      html += `</div>`;
+    });
+    html += `</div>`;
+  } else {
+    html += `<p><strong>You're well diversified! No rebalancing needed.</strong></p>`;
+  }
+  return html;
+}
+document.getElementById('next3').onclick = () => document.querySelector('[data-phase="5"]').click();
+
+/* ==== PHASE 5 ==== */
+let qIdx=0, answers5=[];
+document.getElementById('start5').onclick=()=>{
+  qIdx=0;answers5=[];document.getElementById('bar5').style.width='0%';
+  renderQ5();document.getElementById('start5').style.display='none';
+};
+function renderQ5(){
+  if(qIdx>=QUESTIONS.length){showDNA5();return;}
+  const q=QUESTIONS[qIdx];
+  document.getElementById('qinner5').innerHTML=`<div class="question">${q.q}</div><div class="options">${q.opts.map((o,i)=>`<div class="opt" data-val="${q.vals[i]}">${o}</div>`).join('')}</div>`;
+  document.querySelectorAll('#qinner5 .opt').forEach(o=>o.onclick=()=>{
+    answers5.push(+o.dataset.val);qIdx++;document.getElementById('bar5').style.width=`${(qIdx/QUESTIONS.length)*100}%`;renderQ5();
+  });
+}
+function showDNA5(){
+  const score=answers5.reduce((a,b)=>a+b,0);
+  const profile=score<=5?'conservative':score<=8?'moderate':'aggressive';
+  document.getElementById('profile5').textContent=profile.charAt(0).toUpperCase()+profile.slice(1);
+  document.getElementById('desc5').textContent={conservative:'Safety first',moderate:'Balanced',aggressive:'Growth-focused'}[profile];
+  dataFlow.riskProfile=profile;
+  document.getElementById('result5').style.display='block';
+  scrollToResult('result5');
+}
+document.getElementById('next5').onclick = () => document.querySelector('[data-phase="6"]').click();
+
+/* ==== PHASE 6 ==== */
+const wealthChart6 = new Chart(document.getElementById('chart6'),{
+  type:'line',
+  data:{labels:[],datasets:[
+    {label:'Continue',data:[],borderColor:'#FFD066',backgroundColor:'rgba(255,208,102,.2)',fill:true,tension:.4},
+    {label:'Stop',data:[],borderColor:'#3FB0FF',backgroundColor:'rgba(63,176,255,.2)',fill:true,tension:.4}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,
+    scales:{y:{beginAtZero:true,ticks:{color:'#bfc7d1',callback:toINR}},x:{ticks:{color:'#bfc7d1'}}},
+    plugins:{legend:{labels:{color:'#FFD066'}}},animation:{duration:1000,easing:'easeOutQuad'}
+  }
+});
+document.getElementById('calc6').onclick=()=>{
+  const P=Math.max(0,+document.getElementById('sip6').value)||10000;
+  const goalYears=Math.max(1,+document.getElementById('goal6').value)||10;
+  const monthsHeld=Math.max(0,+document.getElementById('held6').value)||0;
+  const currentValue=Math.max(0,+document.getElementById('current6').value)||0;
+  const fund=document.getElementById('fund6').value;
+  const annual=fund==='hybrid'?10:fund==='debt'?8:12;
+  const {cont,stop,months}=buildSeries(P,annual,goalYears,monthsHeld,currentValue);
+  const labels=Array.from({length:months+1},(_,i)=>i%6===0?`${(i/12).toFixed(0)}y`:'');
+  wealthChart6.data.labels=labels;wealthChart6.data.datasets[0].data=cont;wealthChart6.data.datasets[1].data=stop;wealthChart6.update();
+  const invested=monthsHeld>0?P*monthsHeld:P*months;
+  const contFinal=cont[cont.length-1];
+  const stopFinal=stop[stop.length-1];
+  const loss=Math.max(0,contFinal-stopFinal);
+  document.getElementById('result6').style.display='block';
+  scrollToResult('result6');
+  animateNum(document.getElementById('invested6'),0,invested);
+  animateNum(document.getElementById('cont6'),0,contFinal);
+  animateNum(document.getElementById('stop6'),0,stopFinal);
+  animateNum(document.getElementById('real6'),0,Math.round(contFinal/Math.pow(1.06,goalYears)));
+  animateNum(document.getElementById('loss6'),0,loss);
+  animateNum(document.getElementById('tax6'),0,0);
+  document.getElementById('title6').textContent='Continue';
+  document.getElementById('reason6').textContent='Strong growth trajectory.';
+  document.getElementById('verdict6').style.display='block';
+};
+function buildSeries(P,annual,years,monthsHeld,current){
+  const r=annual/12/100; const totalM=Math.round(years*12);
+  const pauseM=Math.min(Math.max(0,monthsHeld),totalM);
+  const cont=[current],stop=[current]; let fvC=current,fvS=current;
+  for(let m=1;m<=totalM;m++){
+    fvC=(fvC+P)*(1+r);cont.push(Math.round(fvC));
+    fvS=m<=pauseM?(fvS+P)*(1+r):fvS*(1+r);stop.push(Math.round(fvS));
+  }
+  return {cont,stop,months:totalM};
+}
+</script>
+</body>
+</html>
