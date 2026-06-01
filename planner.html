@@ -1,0 +1,1159 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>YV Master Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#07121a;--bg2:#0d1f2b;--gold:#FFD066;--gold2:#FFB948;
+  --blue:#3FB0FF;--green:#34D399;--red:#F87171;--amber:#FBBF24;
+  --purple:#A78BFA;--muted:#94a3b8;--card:rgba(255,255,255,.025);
+  --border:rgba(255,215,102,.08);--shadow:0 8px 32px rgba(0,0,0,.45);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--bg);color:#e2e8f0;font-family:"Poppins",sans-serif;font-size:14px}
+
+/* ── Navbar ── */
+.navbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:60px;
+  background:rgba(13,31,43,.97);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);
+}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{
+  width:34px;height:34px;border-radius:8px;display:grid;place-items:center;
+  font-weight:700;color:var(--gold);font-size:13px;
+  background:linear-gradient(135deg,rgba(255,208,102,.18),rgba(255,185,72,.08));
+  border:1px solid rgba(255,208,102,.2);
+}
+.logo-text{font-weight:700;color:var(--gold);font-size:.95rem}
+.nav-tabs{display:flex;gap:3px}
+.nav-tab{
+  padding:6px 13px;border-radius:7px;color:var(--muted);cursor:pointer;
+  font-size:.78rem;font-weight:500;transition:all .18s;border:1px solid transparent;
+  white-space:nowrap;
+}
+.nav-tab:hover{color:#fff;background:rgba(255,255,255,.04)}
+.nav-tab.active{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07121a;font-weight:700}
+
+/* ── Pages ── */
+.page{display:none;padding:20px;min-height:calc(100vh - 60px);animation:fadeUp .25s ease}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── Grids ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:900px){.g3{grid-template-columns:1fr 1fr}.g4{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.g2,.g3,.g4{grid-template-columns:1fr}.nav-tabs{gap:2px}.nav-tab{padding:5px 9px;font-size:.7rem}}
+
+/* ── Cards ── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.card-label{font-size:.65rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px}
+.card-num{font-size:1.9rem;font-weight:700;color:#fff}
+.card-hint{font-size:.72rem;color:var(--muted);margin-top:3px}
+
+/* ── Section header ── */
+.sh{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px}
+.sh-title{font-size:1.15rem;font-weight:700;color:#fff}
+.sh-title span{color:var(--gold)}
+.sh-sub{font-size:.76rem;color:var(--muted);margin-top:2px}
+
+/* ── Buttons ── */
+.btn{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:7px 14px;border-radius:8px;border:none;
+  font-family:"Poppins",sans-serif;font-size:.78rem;font-weight:600;
+  cursor:pointer;transition:all .18s;
+}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#07121a}
+.btn-gold:hover{opacity:.9;transform:translateY(-1px)}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--muted)}
+.btn-ghost:hover{border-color:rgba(255,208,102,.3);color:#fff}
+.btn-sm{padding:4px 9px;font-size:.72rem}
+.btn-del{background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.18);color:#F87171}
+.btn-del:hover{background:rgba(248,113,113,.22)}
+
+/* ── Progress bar ── */
+.pbar{height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden;margin:7px 0}
+.pfill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--gold),var(--gold2));transition:width .45s ease}
+.pfill.g{background:linear-gradient(90deg,#34D399,#10B981)}
+.pfill.b{background:linear-gradient(90deg,#3FB0FF,#0EA5E9)}
+.pfill.p{background:linear-gradient(90deg,#A78BFA,#7C3AED)}
+
+/* ── Stage pills ── */
+.stages{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.sp{
+  display:flex;align-items:center;gap:4px;
+  padding:4px 9px;border-radius:20px;font-size:.7rem;font-weight:600;
+  border:1px solid transparent;cursor:pointer;transition:all .18s;user-select:none;
+}
+.sp.done{background:rgba(52,211,153,.14);border-color:rgba(52,211,153,.3);color:#34D399}
+.sp.pending{background:rgba(255,255,255,.03);border-color:rgba(255,255,255,.07);color:var(--muted)}
+.sp.crit.pending{background:rgba(251,191,36,.07);border-color:rgba(251,191,36,.25);color:var(--amber)}
+.sp:hover{transform:translateY(-1px);opacity:.85}
+
+/* ── Item cards ── */
+.ic{background:rgba(255,255,255,.025);border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;transition:border-color .2s}
+.ic:hover{border-color:rgba(255,208,102,.15)}
+.ic.done-card{border-color:rgba(52,211,153,.2);background:rgba(52,211,153,.03)}
+.ic-header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:7px;gap:8px}
+.ic-title{font-weight:600;font-size:.88rem;color:#fff}
+.ic-meta{font-size:.7rem;color:var(--muted);margin-top:2px}
+.ic-actions{display:flex;gap:4px;flex-shrink:0}
+
+/* ── Badges ── */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:12px;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.b-gold{background:rgba(255,208,102,.14);color:var(--gold)}
+.b-green{background:rgba(52,211,153,.14);color:#34D399}
+.b-blue{background:rgba(63,176,255,.14);color:#3FB0FF}
+.b-red{background:rgba(248,113,113,.14);color:#F87171}
+.b-amber{background:rgba(251,191,36,.14);color:var(--amber)}
+.b-purple{background:rgba(167,139,250,.14);color:var(--purple)}
+.b-muted{background:rgba(255,255,255,.06);color:var(--muted)}
+
+/* ── Modal ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.overlay.open{display:flex}
+.modal{
+  background:#0d1f2b;border:1px solid var(--border);border-radius:16px;
+  padding:24px;width:min(460px,95vw);max-height:88vh;overflow-y:auto;animation:fadeUp .2s ease
+}
+.modal-title{font-size:.95rem;font-weight:700;color:var(--gold);margin-bottom:16px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+
+/* ── Form ── */
+.fg{margin-bottom:11px}
+.fl{display:block;font-size:.72rem;color:var(--muted);margin-bottom:5px;font-weight:500}
+.fi{
+  width:100%;padding:9px 11px;
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,215,102,.1);
+  border-radius:8px;color:#fff;font-family:"Poppins",sans-serif;font-size:.83rem;transition:border .2s;
+}
+.fi:focus{border-color:rgba(255,208,102,.4);outline:none}
+.fi::placeholder{color:rgba(255,255,255,.2)}
+textarea.fi{resize:vertical;min-height:76px}
+select.fi{cursor:pointer}
+select.fi option{background:#0d1f2b}
+
+/* ── Charts ── */
+.ch-wrap{position:relative;height:230px}
+.ch-wrap.tall{height:290px}
+
+/* ── Notes area ── */
+.note-area{
+  margin-top:8px;padding:7px 10px;
+  background:rgba(255,255,255,.02);border-radius:8px;
+  border-left:2px solid rgba(255,208,102,.2);
+  font-size:.76rem;color:var(--muted);font-style:italic;cursor:pointer;
+}
+.note-area:hover{border-left-color:rgba(255,208,102,.5)}
+
+/* ── Empty state ── */
+.empty{text-align:center;padding:36px 16px;color:var(--muted)}
+.empty .ei{font-size:2.2rem;margin-bottom:10px}
+.empty p{font-size:.82rem}
+
+/* ── Toast ── */
+.toast{
+  position:fixed;bottom:24px;right:16px;
+  background:#1a2f3f;border:1px solid rgba(52,211,153,.3);
+  border-radius:10px;padding:9px 15px;color:#34D399;
+  font-size:.78rem;font-weight:600;z-index:2000;
+  transform:translateY(80px);opacity:0;transition:all .3s ease;pointer-events:none;
+}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* ── NISM grid ── */
+.nism-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+
+/* ── Brand cards ── */
+.brand-card{
+  background:rgba(255,255,255,.025);border:1px solid var(--border);
+  border-radius:14px;padding:16px;transition:border-color .2s;
+}
+.brand-card:hover{border-color:rgba(255,208,102,.18)}
+
+/* ── Divider ── */
+.divider{height:1px;background:var(--border);margin:16px 0}
+
+/* ── Section label ── */
+.sec-label{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.09em;margin-bottom:10px}
+</style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <div class="logo">
+    <div class="logo-icon">YV</div>
+    <div class="logo-text">Master Planner</div>
+  </div>
+  <div class="nav-tabs">
+    <div class="nav-tab active" data-page="dashboard">Dashboard</div>
+    <div class="nav-tab" data-page="nism">NISM 15</div>
+    <div class="nav-tab" data-page="yv">YV Factor</div>
+    <div class="nav-tab" data-page="mb">Money Blueprint</div>
+    <div class="nav-tab" data-page="bd">Brand Deals</div>
+  </div>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════ DASHBOARD ═══════════════════════ -->
+<div class="page active" id="page-dashboard">
+  <div class="sh">
+    <div>
+      <div class="sh-title">Good <span id="greet"></span>, Yuvraj 👋</div>
+      <div class="sh-sub" id="today"></div>
+    </div>
+    <button class="btn btn-ghost btn-sm" id="btn-add-note">+ Add Note</button>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="g4" style="margin-bottom:18px">
+    <div class="card">
+      <div class="card-label">Total Items</div>
+      <div class="card-num" id="s-total">—</div>
+      <div class="card-hint">across all sections</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Completed</div>
+      <div class="card-num" style="color:var(--green)" id="s-done">—</div>
+      <div class="card-hint">fully finished</div>
+    </div>
+    <div class="card">
+      <div class="card-label">In Progress</div>
+      <div class="card-num" style="color:var(--gold)" id="s-wip">—</div>
+      <div class="card-hint">partially done</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Not Started</div>
+      <div class="card-num" style="color:var(--muted)" id="s-todo">—</div>
+      <div class="card-hint">awaiting start</div>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="g2" style="margin-bottom:18px">
+    <div class="card">
+      <div class="card-label">Overall Completion</div>
+      <div class="ch-wrap"><canvas id="c-overall"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-label">Section Progress</div>
+      <div class="ch-wrap"><canvas id="c-sections"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Bottom row -->
+  <div class="g2">
+    <div class="card">
+      <div class="card-label" style="margin-bottom:12px">Section Breakdown</div>
+      <div id="breakdown"></div>
+    </div>
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <div class="card-label" style="margin:0">Notes & Advice</div>
+      </div>
+      <div id="notes-list"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <div class="card-label" style="margin-bottom:10px">Recent Activity</div>
+    <div id="activity-list"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ NISM 15 ═══════════════════════ -->
+<div class="page" id="page-nism">
+  <div class="sh">
+    <div>
+      <div class="sh-title"><span>NISM 15</span> — Study Tracker</div>
+      <div class="sh-sub">Per chapter: Lecture → Notes → Module Text → Mock Questions</div>
+    </div>
+    <button class="btn btn-gold btn-sm" id="btn-add-ch">+ Add Chapter</button>
+  </div>
+
+  <div class="card" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
+      <div>
+        <div style="font-size:.95rem;font-weight:700;color:#fff">Overall Progress</div>
+        <div class="card-hint" id="nism-prog-text">0 / 0 chapters fully done</div>
+      </div>
+      <div class="g4" style="gap:14px">
+        <div style="text-align:center">
+          <div style="font-size:1.25rem;font-weight:700;color:var(--blue)" id="ns-lec">0</div>
+          <div style="font-size:.62rem;color:var(--muted)">Lectures</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:1.25rem;font-weight:700;color:var(--amber)" id="ns-not">0</div>
+          <div style="font-size:.62rem;color:var(--muted)">Notes</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:1.25rem;font-weight:700;color:var(--purple)" id="ns-mod">0</div>
+          <div style="font-size:.62rem;color:var(--muted)">Module</div>
+        </div>
+        <div style="text-align:center">
+          <div style="font-size:1.25rem;font-weight:700;color:var(--green)" id="ns-mock">0</div>
+          <div style="font-size:.62rem;color:var(--muted)">Mocks</div>
+        </div>
+      </div>
+    </div>
+    <div class="pbar" style="height:8px;margin-top:12px"><div class="pfill" id="nism-bar" style="width:0%"></div></div>
+  </div>
+
+  <div class="nism-grid" id="nism-list"></div>
+</div>
+
+<!-- ═══════════════════════ YV FACTOR ═══════════════════════ -->
+<div class="page" id="page-yv">
+  <div class="sh">
+    <div>
+      <div class="sh-title"><span>YV Factor</span> — Content Pipeline</div>
+      <div class="sh-sub">Research ⚡ (most critical) → Refine → Script → Visual Plan → Shoot → Edit → Upload</div>
+    </div>
+    <button class="btn btn-gold btn-sm" id="btn-add-vid">+ New Video</button>
+  </div>
+
+  <div class="g4" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-label">Total Videos</div>
+      <div class="card-num" id="yv-total">0</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Uploaded</div>
+      <div class="card-num" style="color:var(--green)" id="yv-done">0</div>
+    </div>
+    <div class="card">
+      <div class="card-label">In Research ⚡</div>
+      <div class="card-num" style="color:var(--amber)" id="yv-research">0</div>
+      <div class="card-hint">time-intensive stage</div>
+    </div>
+    <div class="card">
+      <div class="card-label">In Production</div>
+      <div class="card-num" style="color:var(--blue)" id="yv-prod">0</div>
+    </div>
+  </div>
+
+  <div id="yv-list"></div>
+</div>
+
+<!-- ═══════════════════════ MONEY BLUEPRINT ═══════════════════════ -->
+<div class="page" id="page-mb">
+  <div class="sh">
+    <div>
+      <div class="sh-title"><span>The Money Blueprint</span></div>
+      <div class="sh-sub">Episodic series — Scripting → Shooting 🎥 (cinematic, most critical) → Editing → Upload</div>
+    </div>
+    <div style="display:flex;gap:6px">
+      <button class="btn btn-ghost btn-sm" id="btn-add-lv">+ Long Video</button>
+      <button class="btn btn-gold btn-sm" id="btn-add-ep">+ Episode</button>
+    </div>
+  </div>
+
+  <div class="sec-label">Episodes</div>
+  <div id="mb-eps"></div>
+
+  <div class="divider"></div>
+  <div class="sec-label">YouTube Long Videos (Planning & Scripting)</div>
+  <div id="mb-lvs"></div>
+</div>
+
+<!-- ═══════════════════════ BRAND DEALS ═══════════════════════ -->
+<div class="page" id="page-bd">
+  <div class="sh">
+    <div>
+      <div class="sh-title"><span>Brand Deals</span></div>
+      <div class="sh-sub">Active collaborations — Concept → Script → Shoot → Edit → Upload</div>
+    </div>
+    <button class="btn btn-gold btn-sm" id="btn-add-brand">+ New Brand</button>
+  </div>
+  <div class="g3" id="brand-grid"></div>
+</div>
+
+
+<!-- ═══════════════════════ MODALS ═══════════════════════ -->
+
+<!-- Add Chapter -->
+<div class="overlay" id="m-chapter">
+  <div class="modal">
+    <div class="modal-title">Add NISM Chapter</div>
+    <div class="fg"><label class="fl">Chapter Number</label><input class="fi" id="ch-num" type="number" min="1" placeholder="e.g. 1"></div>
+    <div class="fg"><label class="fl">Chapter Name</label><input class="fi" id="ch-name" placeholder="e.g. Introduction to Research Analysis"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeM('m-chapter')">Cancel</button>
+      <button class="btn btn-gold" id="save-ch">Add Chapter</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Video -->
+<div class="overlay" id="m-video">
+  <div class="modal">
+    <div class="modal-title">New YV Factor Video</div>
+    <div class="fg"><label class="fl">Video Title</label><input class="fi" id="vid-title" placeholder="e.g. Top 5 Mutual Funds 2026"></div>
+    <div class="fg"><label class="fl">Topic / Hook Idea</label><input class="fi" id="vid-topic" placeholder="e.g. Passive income for beginners"></div>
+    <div class="fg">
+      <label class="fl">Priority</label>
+      <select class="fi" id="vid-prio"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select>
+    </div>
+    <div class="fg"><label class="fl">Initial Notes</label><textarea class="fi" id="vid-notes" placeholder="Ideas, references, sources to look at..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeM('m-video')">Cancel</button>
+      <button class="btn btn-gold" id="save-vid">Add to Pipeline</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Episode -->
+<div class="overlay" id="m-episode">
+  <div class="modal">
+    <div class="modal-title">New Money Blueprint Episode</div>
+    <div class="fg"><label class="fl">Episode Number</label><input class="fi" id="ep-num" type="number" min="1" placeholder="e.g. 1"></div>
+    <div class="fg"><label class="fl">Episode Title</label><input class="fi" id="ep-title" placeholder="e.g. The Debt Trap"></div>
+    <div class="fg"><label class="fl">Notes / Story Arc</label><textarea class="fi" id="ep-notes" placeholder="Shoot locations, key talking points, cinematic style..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeM('m-episode')">Cancel</button>
+      <button class="btn btn-gold" id="save-ep">Add Episode</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Long Video -->
+<div class="overlay" id="m-lv">
+  <div class="modal">
+    <div class="modal-title">New YouTube Long Video</div>
+    <div class="fg"><label class="fl">Title</label><input class="fi" id="lv-title" placeholder="e.g. Complete Money Blueprint Explainer"></div>
+    <div class="fg"><label class="fl">Planning Notes</label><textarea class="fi" id="lv-notes" placeholder="Script outline, chapter structure, key messages..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeM('m-lv')">Cancel</button>
+      <button class="btn btn-gold" id="save-lv">Add Video</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Brand -->
+<div class="overlay" id="m-brand">
+  <div class="modal">
+    <div class="modal-title">Add Brand Deal</div>
+    <div class="fg"><label class="fl">Brand Name</label><input class="fi" id="br-name" placeholder="e.g. Millet Brand"></div>
+    <div class="fg"><label class="fl">Deal Terms / Frequency</label><input class="fi" id="br-terms" placeholder="e.g. 2 videos per month"></div>
+    <div class="fg">
+      <label class="fl">Status</label>
+      <select class="fi" id="br-status">
+        <option value="active">Active</option>
+        <option value="negotiating">Negotiating</option>
+        <option value="upcoming">Upcoming</option>
+        <option value="paused">Paused</option>
+      </select>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeM('m-brand')">Cancel</button>
+      <button class="btn btn-gold" id="save-brand">Add Brand</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Deliverable -->
+<div class="overlay" id="m-del">
+  <div class="modal">
+    <div class="modal-title">Add Deliverable — <span id="del-brand-label" style="color:#fff"></span></div>
+    <div class="fg"><label class="fl">Deliverable Title</label><input class="fi" id="del-title" placeholder="e.g. Zenclave Review Video #3"></div>
+    <div class="fg"><label class="fl">Due Date</label><input class="fi" type="date" id="del-due"></div>
+    <div class="fg"><label class="fl">Notes / Key Points</label><textarea class="fi" id="del-notes" placeholder="Talking points, product features to cover..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" id="del-cancel">Cancel</button>
+      <button class="btn btn-gold" id="save-del">Add Deliverable</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Note -->
+<div class="overlay" id="m-note">
+  <div class="modal">
+    <div class="modal-title">Add Note / Advice</div>
+    <div class="fg">
+      <label class="fl">Section</label>
+      <select class="fi" id="note-sec">
+        <option value="general">General</option>
+        <option value="nism">NISM 15</option>
+        <option value="yv">YV Factor</option>
+        <option value="mb">Money Blueprint</option>
+        <option value="bd">Brand Deals</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">Note / Advice / Reminder</label><textarea class="fi" id="note-text" placeholder="Write anything you want to remember..."></textarea></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeM('m-note')">Cancel</button>
+      <button class="btn btn-gold" id="save-note">Save Note</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+// ══════════════════ DATA MODEL ══════════════════
+const SEED = {
+  nism:{ chapters:[] },
+  yv:{ videos:[] },
+  mb:{ episodes:[], longVideos:[] },
+  bd:{
+    brands:[
+      {id:'zenclave', name:'Zenclave', terms:'1 video per week', status:'active', deliverables:[]},
+      {id:'xcut-ai',  name:'Xcut AI',  terms:'Flexible — upload when you have an idea', status:'active', deliverables:[]},
+      {id:'millet',   name:'Millet Brand', terms:'Deal under discussion', status:'upcoming', deliverables:[]}
+    ]
+  },
+  notes:[], activity:[]
+};
+
+function load(){
+  try{ const d=localStorage.getItem('yv-planner-v2'); if(d) return JSON.parse(d); }catch(e){}
+  return JSON.parse(JSON.stringify(SEED));
+}
+function save(){ localStorage.setItem('yv-planner-v2', JSON.stringify(D)); }
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+let D = load();
+
+// ══════════════════ CHARTS ══════════════════
+let cOverall, cSections;
+
+function initCharts(){
+  cOverall = new Chart(document.getElementById('c-overall'),{
+    type:'doughnut',
+    data:{
+      labels:['Completed','In Progress','Not Started'],
+      datasets:[{
+        data:[0,0,1],
+        backgroundColor:['#34D399','#FFD066','rgba(255,255,255,.06)'],
+        borderWidth:0,borderRadius:4,cutout:'72%'
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{labels:{color:'#94a3b8',font:{size:11},boxWidth:10}}}
+    }
+  });
+
+  cSections = new Chart(document.getElementById('c-sections'),{
+    type:'bar',
+    data:{
+      labels:['NISM 15','YV Factor','Money Blueprint','Brand Deals'],
+      datasets:[{
+        label:'Completion %',
+        data:[0,0,0,0],
+        backgroundColor:['#3FB0FF','#FFD066','#A78BFA','#34D399'],
+        borderRadius:6,borderWidth:0
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,indexAxis:'y',
+      scales:{
+        x:{max:100,ticks:{color:'#94a3b8',callback:v=>v+'%'},grid:{color:'rgba(255,255,255,.04)'}},
+        y:{ticks:{color:'#94a3b8'},grid:{display:false}}
+      },
+      plugins:{legend:{display:false}}
+    }
+  });
+}
+
+// ══════════════════ STATS ══════════════════
+function nismStats(){
+  const chs=D.nism.chapters, t=chs.length;
+  const sk=['lecture','notes','moduleText','mockQuestions'];
+  let done=0,wip=0,sc={lecture:0,notes:0,moduleText:0,mockQuestions:0};
+  chs.forEach(c=>{
+    const n=sk.filter(s=>c.stages[s]).length;
+    sk.forEach(s=>{ if(c.stages[s]) sc[s]++; });
+    if(n===4) done++; else if(n>0) wip++;
+  });
+  return {t,done,wip,todo:t-done-wip,pct:t?Math.round(done/t*100):0,sc};
+}
+
+function yvStats(){
+  const vs=D.yv.videos, sk=['research','refine','script','visualPlanning','shoot','edit','upload'];
+  let done=0,wip=0,res=0,prod=0;
+  vs.forEach(v=>{
+    const n=sk.filter(s=>v.stages[s]).length;
+    if(n===7) done++;
+    else if(n>0){ wip++; if(!v.stages.research) res++; else prod++; }
+    else if(!v.stages.research) res++;
+  });
+  return {t:vs.length,done,wip,todo:vs.length-done-wip,res,prod,pct:vs.length?Math.round(done/vs.length*100):0};
+}
+
+function mbStats(){
+  const eps=D.mb.episodes, lvs=D.mb.longVideos;
+  const esk=['scripting','shooting','editing','upload'], lsk=['planning','scripting','shooting','editing','upload'];
+  let done=0,wip=0;
+  eps.forEach(e=>{ const n=esk.filter(s=>e.stages[s]).length; if(n===4) done++; else if(n>0) wip++; });
+  lvs.forEach(l=>{ const n=lsk.filter(s=>l.stages[s]).length; if(n===5) done++; else if(n>0) wip++; });
+  const t=eps.length+lvs.length;
+  return {t,done,wip,todo:t-done-wip,pct:t?Math.round(done/t*100):0};
+}
+
+function bdStats(){
+  const sk=['concept','script','shoot','edit','upload'];
+  let t=0,done=0,wip=0;
+  D.bd.brands.forEach(b=>{
+    (b.deliverables||[]).forEach(d=>{
+      t++;
+      const n=sk.filter(s=>d.stages[s]).length;
+      if(n===5) done++; else if(n>0) wip++;
+    });
+  });
+  return {t,done,wip,todo:t-done-wip,pct:t?Math.round(done/t*100):0};
+}
+
+function allStats(){
+  const n=nismStats(),y=yvStats(),m=mbStats(),b=bdStats();
+  const t=n.t+y.t+m.t+b.t, done=n.done+y.done+m.done+b.done, wip=n.wip+y.wip+m.wip+b.wip;
+  return {t,done,wip,todo:t-done-wip,n,y,m,b};
+}
+
+// ══════════════════ DASHBOARD ══════════════════
+function renderDash(){
+  const st=allStats();
+  el('s-total').textContent=st.t;
+  el('s-done').textContent=st.done;
+  el('s-wip').textContent=st.wip;
+  el('s-todo').textContent=st.todo;
+
+  cOverall.data.datasets[0].data=[st.done,st.wip,Math.max(0,st.todo)];
+  cOverall.update();
+  cSections.data.datasets[0].data=[st.n.pct,st.y.pct,st.m.pct,st.b.pct];
+  cSections.update();
+
+  // Breakdown bars
+  const secs=[
+    {label:'📚 NISM 15',pct:st.n.pct,c:'#3FB0FF'},
+    {label:'🎬 YV Factor',pct:st.y.pct,c:'#FFD066'},
+    {label:'💰 Money Blueprint',pct:st.m.pct,c:'#A78BFA'},
+    {label:'🤝 Brand Deals',pct:st.b.pct,c:'#34D399'}
+  ];
+  el('breakdown').innerHTML=secs.map(s=>`
+    <div style="margin-bottom:11px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+        <span style="font-size:.81rem;font-weight:600">${s.label}</span>
+        <span style="font-size:.76rem;color:var(--muted)">${s.pct}%</span>
+      </div>
+      <div class="pbar" style="margin:0"><div class="pfill" style="width:${s.pct}%;background:${s.c}"></div></div>
+    </div>`).join('');
+
+  // Notes
+  const nl=el('notes-list');
+  if(!D.notes.length){
+    nl.innerHTML='<div style="color:var(--muted);font-size:.78rem;padding:4px 0">No notes yet. Use "+ Add Note" to capture ideas.</div>';
+  } else {
+    const secColor={general:'b-muted',nism:'b-blue',yv:'b-gold',mb:'b-purple',bd:'b-green'};
+    nl.innerHTML=D.notes.slice().reverse().slice(0,6).map(n=>`
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+        <div>
+          <span class="badge ${secColor[n.sec]||'b-muted'}" style="margin-bottom:3px">${n.sec.replace('-',' ')}</span>
+          <div style="font-size:.78rem;color:#e2e8f0;margin-top:3px">${esc(n.text)}</div>
+          <div style="font-size:.68rem;color:var(--muted);margin-top:2px">${fmtDate(n.date)}</div>
+        </div>
+        <button onclick="delNote('${n.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:2px;margin-left:6px;flex-shrink:0">×</button>
+      </div>`).join('');
+  }
+
+  // Activity
+  const al=el('activity-list');
+  if(!D.activity.length){
+    al.innerHTML='<div style="color:var(--muted);font-size:.78rem;padding:4px 0">No activity yet. Start checking off tasks!</div>';
+  } else {
+    al.innerHTML=D.activity.slice().reverse().slice(0,10).map(a=>`
+      <div style="display:flex;align-items:center;gap:9px;margin-bottom:7px">
+        <div style="width:6px;height:6px;border-radius:50%;background:${a.type==='complete'?'#34D399':'#FFD066'};flex-shrink:0"></div>
+        <span style="font-size:.78rem;color:#e2e8f0">${esc(a.text)}</span>
+        <span style="font-size:.68rem;color:var(--muted);white-space:nowrap;margin-left:auto">${fmtDate(a.date)}</span>
+      </div>`).join('');
+  }
+
+  const h=new Date().getHours();
+  el('greet').textContent=h<12?'morning':h<17?'afternoon':'evening';
+  el('today').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+
+// ══════════════════ NISM RENDER ══════════════════
+const NISM_STAGES=[
+  {key:'lecture',    label:'Lecture',     col:'#3FB0FF'},
+  {key:'notes',      label:'Notes',       col:'#FBBF24'},
+  {key:'moduleText', label:'Module Text', col:'#A78BFA'},
+  {key:'mockQuestions',label:'Mock Q',   col:'#34D399'}
+];
+
+function renderNism(){
+  const st=nismStats();
+  el('nism-prog-text').textContent=`${st.done} / ${st.t} chapters fully done · ${st.pct}%`;
+  el('nism-bar').style.width=st.pct+'%';
+  el('ns-lec').textContent=st.sc.lecture;
+  el('ns-not').textContent=st.sc.notes;
+  el('ns-mod').textContent=st.sc.moduleText;
+  el('ns-mock').textContent=st.sc.mockQuestions;
+
+  const c=el('nism-list');
+  if(!D.nism.chapters.length){
+    c.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="ei">📚</div><p>No chapters yet.<br>Click "+ Add Chapter" to begin.</p></div>`;
+    return;
+  }
+  c.innerHTML=D.nism.chapters.map(ch=>{
+    const n=NISM_STAGES.filter(s=>ch.stages[s.key]).length;
+    const pct=Math.round(n/4*100), isDone=n===4;
+    return `
+    <div class="ic ${isDone?'done-card':''}" id="ch-${ch.id}">
+      <div class="ic-header">
+        <div>
+          <div class="ic-title">Ch ${ch.num}: ${esc(ch.name)}</div>
+          <div class="ic-meta">${n}/4 stages · ${pct}%</div>
+        </div>
+        <div class="ic-actions">
+          ${isDone?'<span class="badge b-green">Done</span>':''}
+          <button class="btn btn-del btn-sm" onclick="delChapter('${ch.id}')">×</button>
+        </div>
+      </div>
+      <div class="pbar"><div class="pfill" style="width:${pct}%"></div></div>
+      <div class="stages">
+        ${NISM_STAGES.map(s=>`
+          <div class="sp ${ch.stages[s.key]?'done':'pending'}" onclick="toggleN('${ch.id}','${s.key}')"
+               style="${ch.stages[s.key]?`border-color:${s.col}40;color:${s.col}`:''}">
+            ${ch.stages[s.key]?'✓':'○'} ${s.label}
+          </div>`).join('')}
+      </div>
+      ${ch.notes
+        ?`<div class="note-area" onclick="editChNote('${ch.id}')">${esc(ch.notes)}</div>`
+        :`<div style="margin-top:7px"><button class="btn btn-ghost btn-sm" onclick="editChNote('${ch.id}')">+ note</button></div>`}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════ YV FACTOR RENDER ══════════════════
+const YV_STAGES=[
+  {key:'research',      label:'Research',     crit:true },
+  {key:'refine',        label:'Refine',       crit:false},
+  {key:'script',        label:'Script',       crit:false},
+  {key:'visualPlanning',label:'Visual Plan',  crit:false},
+  {key:'shoot',         label:'Shoot',        crit:false},
+  {key:'edit',          label:'Edit',         crit:false},
+  {key:'upload',        label:'Upload',       crit:false}
+];
+
+function renderYV(){
+  const st=yvStats();
+  el('yv-total').textContent=st.t;
+  el('yv-done').textContent=st.done;
+  el('yv-research').textContent=st.res;
+  el('yv-prod').textContent=st.prod;
+
+  const c=el('yv-list');
+  if(!D.yv.videos.length){
+    c.innerHTML=`<div class="empty"><div class="ei">🎬</div><p>No videos yet.<br>Click "+ New Video" to start your pipeline.</p></div>`;
+    return;
+  }
+  const priCol={high:'#F87171',medium:'#FBBF24',low:'#94a3b8'};
+  c.innerHTML=D.yv.videos.map(v=>{
+    const n=YV_STAGES.filter(s=>v.stages[s.key]).length;
+    const pct=Math.round(n/7*100), isDone=n===7;
+    const nextIdx=YV_STAGES.findIndex(s=>!v.stages[s.key]);
+    const next=nextIdx>=0?YV_STAGES[nextIdx]:null;
+    const pc=priCol[v.priority]||'#94a3b8';
+    return `
+    <div class="ic ${isDone?'done-card':''}" id="vid-${v.id}">
+      <div class="ic-header">
+        <div style="flex:1">
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+            <div class="ic-title">${esc(v.title)}</div>
+            <span class="badge" style="background:${pc}22;color:${pc}">${v.priority}</span>
+            ${isDone?'<span class="badge b-green">Uploaded</span>':''}
+            ${!isDone&&next&&next.crit?'<span class="badge b-amber">⚡ Research Phase</span>':''}
+          </div>
+          ${v.topic?`<div class="ic-meta">${esc(v.topic)}</div>`:''}
+          ${next&&!isDone?`<div style="font-size:.68rem;color:var(--muted);margin-top:1px">Next: ${next.label}</div>`:''}
+        </div>
+        <button class="btn btn-del btn-sm" onclick="delVideo('${v.id}')">×</button>
+      </div>
+      <div class="pbar"><div class="pfill" style="width:${pct}%"></div></div>
+      <div class="stages">
+        ${YV_STAGES.map(s=>`
+          <div class="sp ${v.stages[s.key]?'done':'pending'} ${s.crit?'crit':''}" onclick="toggleYV('${v.id}','${s.key}')">
+            ${v.stages[s.key]?'✓':'○'} ${s.label}${s.crit?' ⚡':''}
+          </div>`).join('')}
+      </div>
+      ${v.notes?`<div class="note-area">${esc(v.notes)}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════ MONEY BLUEPRINT RENDER ══════════════════
+const EP_STAGES=[
+  {key:'scripting',label:'Script',  crit:false},
+  {key:'shooting', label:'Shoot',   crit:true },
+  {key:'editing',  label:'Edit',    crit:false},
+  {key:'upload',   label:'Upload',  crit:false}
+];
+const LV_STAGES=[
+  {key:'planning', label:'Plan',    crit:false},
+  {key:'scripting',label:'Script',  crit:false},
+  {key:'shooting', label:'Shoot',   crit:true },
+  {key:'editing',  label:'Edit',    crit:false},
+  {key:'upload',   label:'Upload',  crit:false}
+];
+
+function renderMB(){
+  const epc=el('mb-eps');
+  if(!D.mb.episodes.length){
+    epc.innerHTML=`<div class="empty"><div class="ei">🎞️</div><p>No episodes yet. Click "+ Episode".</p></div>`;
+  } else {
+    epc.innerHTML=D.mb.episodes.map(ep=>{
+      const n=EP_STAGES.filter(s=>ep.stages[s.key]).length;
+      const pct=Math.round(n/4*100), isDone=n===4;
+      return `
+      <div class="ic ${isDone?'done-card':''}" id="ep-${ep.id}">
+        <div class="ic-header">
+          <div>
+            <div class="ic-title">Ep ${ep.num}: ${esc(ep.title)}</div>
+            <div class="ic-meta">${n}/4 stages · ${pct}%</div>
+          </div>
+          <div class="ic-actions">
+            ${isDone?'<span class="badge b-green">Done</span>':''}
+            <button class="btn btn-del btn-sm" onclick="delEp('${ep.id}')">×</button>
+          </div>
+        </div>
+        <div class="pbar"><div class="pfill p" style="width:${pct}%"></div></div>
+        <div class="stages">
+          ${EP_STAGES.map(s=>`
+            <div class="sp ${ep.stages[s.key]?'done':'pending'} ${s.crit?'crit':''}" onclick="toggleEP('${ep.id}','${s.key}')">
+              ${ep.stages[s.key]?'✓':'○'} ${s.label}${s.crit?' 🎥':''}
+            </div>`).join('')}
+        </div>
+        ${ep.notes?`<div class="note-area">${esc(ep.notes)}</div>`:''}
+      </div>`;
+    }).join('');
+  }
+
+  const lvc=el('mb-lvs');
+  if(!D.mb.longVideos.length){
+    lvc.innerHTML=`<div class="empty"><div class="ei">📹</div><p>No long videos yet. Click "+ Long Video".</p></div>`;
+  } else {
+    lvc.innerHTML=D.mb.longVideos.map(lv=>{
+      const n=LV_STAGES.filter(s=>lv.stages[s.key]).length;
+      const pct=Math.round(n/5*100), isDone=n===5;
+      return `
+      <div class="ic ${isDone?'done-card':''}" id="lv-${lv.id}">
+        <div class="ic-header">
+          <div>
+            <div class="ic-title">${esc(lv.title)}</div>
+            <div class="ic-meta">Long Video · ${n}/5 stages · ${pct}%</div>
+          </div>
+          <div class="ic-actions">
+            ${isDone?'<span class="badge b-green">Done</span>':''}
+            <button class="btn btn-del btn-sm" onclick="delLV('${lv.id}')">×</button>
+          </div>
+        </div>
+        <div class="pbar"><div class="pfill p" style="width:${pct}%"></div></div>
+        <div class="stages">
+          ${LV_STAGES.map(s=>`
+            <div class="sp ${lv.stages[s.key]?'done':'pending'} ${s.crit?'crit':''}" onclick="toggleLV('${lv.id}','${s.key}')">
+              ${lv.stages[s.key]?'✓':'○'} ${s.label}${s.crit?' 🎥':''}
+            </div>`).join('')}
+        </div>
+        ${lv.notes?`<div class="note-area">${esc(lv.notes)}</div>`:''}
+      </div>`;
+    }).join('');
+  }
+}
+
+// ══════════════════ BRAND DEALS RENDER ══════════════════
+const DEL_STAGES=[
+  {key:'concept',label:'Concept'},
+  {key:'script', label:'Script'},
+  {key:'shoot',  label:'Shoot'},
+  {key:'edit',   label:'Edit'},
+  {key:'upload', label:'Upload'}
+];
+
+const STATUS_C={active:'#34D399',negotiating:'#FBBF24',upcoming:'#3FB0FF',paused:'#94a3b8'};
+
+function renderBD(){
+  const c=el('brand-grid');
+  if(!D.bd.brands.length){
+    c.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="ei">🤝</div><p>No brands yet.</p></div>`;
+    return;
+  }
+  c.innerHTML=D.bd.brands.map(b=>{
+    const dels=b.deliverables||[];
+    const done=dels.filter(d=>DEL_STAGES.every(s=>d.stages[s.key])).length;
+    const sc=STATUS_C[b.status]||'#94a3b8';
+    return `
+    <div class="brand-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px">
+        <div>
+          <div style="font-size:1rem;font-weight:700;color:#fff">${esc(b.name)}</div>
+          <div style="font-size:.73rem;color:var(--muted);margin-top:2px">${esc(b.terms)}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+          <span class="badge" style="background:${sc}22;color:${sc}">${b.status}</span>
+          <button class="btn btn-del btn-sm" onclick="delBrand('${b.id}')">Remove</button>
+        </div>
+      </div>
+
+      <div style="font-size:.7rem;color:var(--muted);margin-bottom:8px">
+        ${done}/${dels.length} deliverables complete
+      </div>
+
+      ${dels.map(d=>{
+        const n=DEL_STAGES.filter(s=>d.stages[s.key]).length;
+        const pct=Math.round(n/5*100), isDone=n===5;
+        const now=new Date(), due=d.dueDate?new Date(d.dueDate):null;
+        const overdue=due&&due<now&&!isDone;
+        return `
+        <div style="margin-bottom:9px;padding:9px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid ${isDone?'rgba(52,211,153,.2)':overdue?'rgba(248,113,113,.2)':'var(--border)'}">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
+            <div style="font-size:.81rem;font-weight:600;color:${isDone?'#34D399':overdue?'#F87171':'#fff'}">${esc(d.title)}</div>
+            <button onclick="delDel('${b.id}','${d.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem">×</button>
+          </div>
+          ${d.dueDate?`<div style="font-size:.68rem;color:${overdue?'#F87171':'var(--muted)'};margin-bottom:5px">${overdue?'⚠ Overdue · ':'Due: '}${fmtDate(d.dueDate)}</div>`:''}
+          <div class="pbar" style="margin:3px 0 6px"><div class="pfill g" style="width:${pct}%"></div></div>
+          <div class="stages" style="margin-top:5px">
+            ${DEL_STAGES.map(s=>`
+              <div class="sp ${d.stages[s.key]?'done':'pending'}" onclick="toggleDel('${b.id}','${d.id}','${s.key}')">
+                ${d.stages[s.key]?'✓':'○'} ${s.label}
+              </div>`).join('')}
+          </div>
+          ${d.notes?`<div class="note-area">${esc(d.notes)}</div>`:''}
+        </div>`;
+      }).join('')}
+
+      <button class="btn btn-ghost btn-sm" style="width:100%;margin-top:4px;justify-content:center" onclick="openAddDel('${b.id}')">
+        + Add Deliverable
+      </button>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════ TOGGLE HANDLERS ══════════════════
+function toggleN(chId, stage){
+  const ch=D.nism.chapters.find(c=>c.id===chId); if(!ch) return;
+  ch.stages[stage]=!ch.stages[stage];
+  const allDone=Object.values(ch.stages).every(Boolean);
+  if(allDone){ log(`Completed all stages for Ch ${ch.num}: ${ch.name}`,'complete'); toast('Chapter completed! 🎉'); }
+  else { log(`${ch.stages[stage]?'✓':'○'} ${stage} — Ch ${ch.num}: ${ch.name}`,'update'); }
+  save(); renderNism(); renderDash();
+}
+
+function toggleYV(vidId, stage){
+  const v=D.yv.videos.find(x=>x.id===vidId); if(!v) return;
+  v.stages[stage]=!v.stages[stage];
+  if(stage==='upload'&&v.stages[stage]){ log(`Uploaded "${v.title}"`,'complete'); toast('Video live! Great work! 🚀'); }
+  else log(`${v.stages[stage]?'✓':'○'} ${stage} — "${v.title}"`,'update');
+  save(); renderYV(); renderDash();
+}
+
+function toggleEP(epId, stage){
+  const ep=D.mb.episodes.find(e=>e.id===epId); if(!ep) return;
+  ep.stages[stage]=!ep.stages[stage];
+  if(stage==='upload'&&ep.stages[stage]){ log(`Published Ep ${ep.num}: "${ep.title}"`,'complete'); toast('Episode published! 💰'); }
+  else log(`${ep.stages[stage]?'✓':'○'} ${stage} — Ep ${ep.num}`,'update');
+  save(); renderMB(); renderDash();
+}
+
+function toggleLV(lvId, stage){
+  const lv=D.mb.longVideos.find(l=>l.id===lvId); if(!lv) return;
+  lv.stages[stage]=!lv.stages[stage];
+  if(stage==='upload'&&lv.stages[stage]){ log(`Uploaded long video: "${lv.title}"`,'complete'); toast('Long video live!'); }
+  save(); renderMB(); renderDash();
+}
+
+function toggleDel(brandId, delId, stage){
+  const b=D.bd.brands.find(x=>x.id===brandId); if(!b) return;
+  const d=(b.deliverables||[]).find(x=>x.id===delId); if(!d) return;
+  d.stages[stage]=!d.stages[stage];
+  if(stage==='upload'&&d.stages[stage]){ log(`Delivered "${d.title}" for ${b.name}`,'complete'); toast('Deliverable done! 🤝'); }
+  save(); renderBD(); renderDash();
+}
+
+// ══════════════════ DELETE HANDLERS ══════════════════
+function delChapter(id){ if(!confirm('Delete this chapter?')) return; D.nism.chapters=D.nism.chapters.filter(c=>c.id!==id); save(); renderNism(); renderDash(); }
+function delVideo(id){ if(!confirm('Delete this video?')) return; D.yv.videos=D.yv.videos.filter(v=>v.id!==id); save(); renderYV(); renderDash(); }
+function delEp(id){ if(!confirm('Delete this episode?')) return; D.mb.episodes=D.mb.episodes.filter(e=>e.id!==id); save(); renderMB(); renderDash(); }
+function delLV(id){ if(!confirm('Delete this video?')) return; D.mb.longVideos=D.mb.longVideos.filter(l=>l.id!==id); save(); renderMB(); renderDash(); }
+function delBrand(id){ if(!confirm('Remove this brand?')) return; D.bd.brands=D.bd.brands.filter(b=>b.id!==id); save(); renderBD(); renderDash(); }
+function delDel(bId,dId){ const b=D.bd.brands.find(x=>x.id===bId); if(!b) return; b.deliverables=(b.deliverables||[]).filter(d=>d.id!==dId); save(); renderBD(); renderDash(); }
+function delNote(id){ D.notes=D.notes.filter(n=>n.id!==id); save(); renderDash(); }
+
+// ══════════════════ CHAPTER NOTE EDITING ══════════════════
+function editChNote(chId){
+  const ch=D.nism.chapters.find(c=>c.id===chId); if(!ch) return;
+  const note=prompt('Chapter note:',ch.notes||'');
+  if(note!==null){ ch.notes=note; save(); renderNism(); }
+}
+
+// ══════════════════ MODALS ══════════════════
+function openM(id){ document.getElementById(id).classList.add('open'); }
+function closeM(id){ document.getElementById(id).classList.remove('open'); }
+
+document.querySelectorAll('.overlay').forEach(o=>
+  o.addEventListener('click',e=>{ if(e.target===o) o.classList.remove('open'); })
+);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') document.querySelectorAll('.overlay.open').forEach(o=>o.classList.remove('open')); });
+
+// Add Chapter
+el('btn-add-ch').onclick=()=>openM('m-chapter');
+el('save-ch').onclick=()=>{
+  const num=parseInt(el('ch-num').value)||D.nism.chapters.length+1;
+  const name=el('ch-name').value.trim();
+  if(!name) return alert('Enter a chapter name');
+  D.nism.chapters.push({id:uid(),num,name,stages:{lecture:false,notes:false,moduleText:false,mockQuestions:false},notes:'',addedDate:new Date().toISOString()});
+  D.nism.chapters.sort((a,b)=>a.num-b.num);
+  log(`Added Ch ${num}: ${name}`,'update');
+  save(); renderNism(); renderDash(); closeM('m-chapter');
+  el('ch-num').value=''; el('ch-name').value='';
+  toast('Chapter added!');
+};
+
+// Add Video
+el('btn-add-vid').onclick=()=>openM('m-video');
+el('save-vid').onclick=()=>{
+  const title=el('vid-title').value.trim();
+  if(!title) return alert('Enter a title');
+  D.yv.videos.push({
+    id:uid(),title,topic:el('vid-topic').value.trim(),
+    priority:el('vid-prio').value,notes:el('vid-notes').value.trim(),
+    stages:{research:false,refine:false,script:false,visualPlanning:false,shoot:false,edit:false,upload:false},
+    addedDate:new Date().toISOString()
+  });
+  log(`Added video: "${title}"`,'update');
+  save(); renderYV(); renderDash(); closeM('m-video');
+  ['vid-title','vid-topic','vid-notes'].forEach(id=>el(id).value='');
+  toast('Video added to pipeline!');
+};
+
+// Add Episode
+el('btn-add-ep').onclick=()=>openM('m-episode');
+el('save-ep').onclick=()=>{
+  const num=parseInt(el('ep-num').value)||D.mb.episodes.length+1;
+  const title=el('ep-title').value.trim();
+  if(!title) return alert('Enter a title');
+  D.mb.episodes.push({
+    id:uid(),num,title,notes:el('ep-notes').value.trim(),
+    stages:{scripting:false,shooting:false,editing:false,upload:false},
+    addedDate:new Date().toISOString()
+  });
+  D.mb.episodes.sort((a,b)=>a.num-b.num);
+  save(); renderMB(); renderDash(); closeM('m-episode');
+  ['ep-num','ep-title','ep-notes'].forEach(id=>el(id).value='');
+  toast('Episode added!');
+};
+
+// Add Long Video
+el('btn-add-lv').onclick=()=>openM('m-lv');
+el('save-lv').onclick=()=>{
+  const title=el('lv-title').value.trim();
+  if(!title) return alert('Enter a title');
+  D.mb.longVideos.push({
+    id:uid(),title,notes:el('lv-notes').value.trim(),
+    stages:{planning:false,scripting:false,shooting:false,editing:false,upload:false},
+    addedDate:new Date().toISOString()
+  });
+  save(); renderMB(); renderDash(); closeM('m-lv');
+  ['lv-title','lv-notes'].forEach(id=>el(id).value='');
+  toast('Long video added!');
+};
+
+// Add Brand
+el('btn-add-brand').onclick=()=>openM('m-brand');
+el('save-brand').onclick=()=>{
+  const name=el('br-name').value.trim();
+  if(!name) return alert('Enter a brand name');
+  D.bd.brands.push({id:uid(),name,terms:el('br-terms').value.trim(),status:el('br-status').value,deliverables:[]});
+  save(); renderBD(); renderDash(); closeM('m-brand');
+  ['br-name','br-terms'].forEach(id=>el(id).value='');
+  toast('Brand added!');
+};
+
+// Add Deliverable
+let _brandForDel=null;
+function openAddDel(brandId){
+  _brandForDel=brandId;
+  const b=D.bd.brands.find(x=>x.id===brandId);
+  el('del-brand-label').textContent=b?b.name:'';
+  openM('m-del');
+}
+el('del-cancel').onclick=()=>{ closeM('m-del'); _brandForDel=null; };
+el('save-del').onclick=()=>{
+  const title=el('del-title').value.trim();
+  if(!title) return alert('Enter a title');
+  const b=D.bd.brands.find(x=>x.id===_brandForDel); if(!b) return;
+  b.deliverables.push({
+    id:uid(),title,dueDate:el('del-due').value,notes:el('del-notes').value.trim(),
+    stages:{concept:false,script:false,shoot:false,edit:false,upload:false},
+    addedDate:new Date().toISOString()
+  });
+  log(`Added deliverable "${title}" for ${b.name}`,'update');
+  save(); renderBD(); renderDash(); closeM('m-del');
+  ['del-title','del-due','del-notes'].forEach(id=>el(id).value='');
+  _brandForDel=null;
+  toast('Deliverable added!');
+};
+
+// Add Note
+el('btn-add-note').onclick=()=>openM('m-note');
+el('save-note').onclick=()=>{
+  const text=el('note-text').value.trim();
+  if(!text) return alert('Write something first');
+  D.notes.push({id:uid(),text,sec:el('note-sec').value,date:new Date().toISOString()});
+  save(); renderDash(); closeM('m-note');
+  el('note-text').value='';
+  toast('Note saved!');
+};
+
+// ══════════════════ NAV ══════════════════
+document.querySelectorAll('.nav-tab').forEach(t=>{
+  t.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-tab').forEach(x=>x.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+    t.classList.add('active');
+    el(`page-${t.dataset.page}`).classList.add('active');
+  });
+});
+
+// ══════════════════ UTILS ══════════════════
+function el(id){ return document.getElementById(id); }
+
+function toast(msg){
+  const t=el('toast'); t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2600);
+}
+
+function log(text,type){
+  D.activity.push({text,type,date:new Date().toISOString()});
+  if(D.activity.length>60) D.activity=D.activity.slice(-60);
+}
+
+function fmtDate(d){
+  if(!d) return '';
+  const dt=new Date(d);
+  return isNaN(dt)?d:dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'2-digit'});
+}
+
+function esc(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════ BOOT ══════════════════
+initCharts();
+renderDash();
+renderNism();
+renderYV();
+renderMB();
+renderBD();
+</script>
+</body>
+</html>
