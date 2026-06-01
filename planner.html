@@ -533,9 +533,15 @@ function loadLocal(){
 async function loadData(){
   try{
     const res = await fetch(FB);
-    if(res.ok){ const d=await res.json(); if(d&&d.nism) return d; }
+    if(res.ok){
+      const d=await res.json();
+      if(d&&d.nism) return d;
+    }
   }catch(e){}
-  return loadLocal();
+  // Firebase was empty — load from this browser and push it up so all devices sync
+  const local = loadLocal();
+  fetch(FB,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(local)}).catch(()=>{});
+  return local;
 }
 
 function save(){
