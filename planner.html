@@ -379,9 +379,31 @@ select.fi option{background:#0d1f2b}
   <div class="sh">
     <div>
       <div class="sh-title"><span>Brand Deals</span></div>
-      <div class="sh-sub">Active collaborations — Concept → Script → Shoot → Edit → Upload</div>
+      <div class="sh-sub">Concept → Script → Shoot → Edit → Upload · track every deliverable</div>
     </div>
     <button class="btn btn-gold btn-sm" id="btn-add-brand">+ New Brand</button>
+  </div>
+  <!-- Summary stats -->
+  <div class="g4" style="margin-bottom:16px">
+    <div class="card">
+      <div class="card-label">Total Delivered</div>
+      <div class="card-num" style="color:var(--green)" id="bd-s-done">0</div>
+      <div class="card-hint">all time</div>
+    </div>
+    <div class="card">
+      <div class="card-label">This Month</div>
+      <div class="card-num" style="color:var(--blue)" id="bd-s-month">0</div>
+      <div class="card-hint" id="bd-s-month-label">Jun 2026</div>
+    </div>
+    <div class="card">
+      <div class="card-label">In Progress</div>
+      <div class="card-num" style="color:var(--gold)" id="bd-s-wip">0</div>
+    </div>
+    <div class="card">
+      <div class="card-label">Overdue</div>
+      <div class="card-num" style="color:var(--red)" id="bd-s-over">0</div>
+      <div class="card-hint">need attention</div>
+    </div>
   </div>
   <div class="g3" id="brand-grid"></div>
 </div>
@@ -472,10 +494,22 @@ select.fi option{background:#0d1f2b}
 <!-- Add Deliverable -->
 <div class="overlay" id="m-del">
   <div class="modal">
-    <div class="modal-title">Add Deliverable — <span id="del-brand-label" style="color:#fff"></span></div>
-    <div class="fg"><label class="fl">Deliverable Title</label><input class="fi" id="del-title" placeholder="e.g. Zenclave Review Video #3"></div>
+    <div class="modal-title">New Deliverable — <span id="del-brand-label" style="color:#fff"></span></div>
+    <div class="fg"><label class="fl">Video Title</label><input class="fi" id="del-title" placeholder="e.g. Zenclave App Review #3"></div>
+    <div class="fg">
+      <label class="fl">Video Type</label>
+      <select class="fi" id="del-type">
+        <option value="review">Product Review</option>
+        <option value="sponsored">Sponsored Integration</option>
+        <option value="tutorial">Tutorial / How-to</option>
+        <option value="unboxing">Unboxing</option>
+        <option value="comparison">Comparison</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
     <div class="fg"><label class="fl">Due Date</label><input class="fi" type="date" id="del-due"></div>
-    <div class="fg"><label class="fl">Notes / Key Points</label><textarea class="fi" id="del-notes" placeholder="Talking points, product features to cover..."></textarea></div>
+    <div class="fg"><label class="fl">Payment (₹) — optional</label><input class="fi" type="number" id="del-payment" placeholder="e.g. 5000"></div>
+    <div class="fg"><label class="fl">Brief / Key Talking Points</label><textarea class="fi" id="del-notes" placeholder="What to cover, product USPs, mandatory mentions..."></textarea></div>
     <div class="modal-footer">
       <button class="btn btn-ghost" id="del-cancel">Cancel</button>
       <button class="btn btn-gold" id="save-del">Add Deliverable</button>
@@ -525,8 +559,21 @@ const SEED = {
   notes:[], activity:[]
 };
 
+function ensureDefaults(d){
+  if(!d.bd||!d.bd.brands||!d.bd.brands.length) d.bd=JSON.parse(JSON.stringify(SEED.bd));
+  if(!d.notes) d.notes=[];
+  if(!d.activity) d.activity=[];
+  if(!d.nism) d.nism={chapters:[]};
+  if(!d.yv) d.yv={videos:[]};
+  if(!d.mb) d.mb={episodes:[],longVideos:[]};
+  return d;
+}
+
 function loadLocal(){
-  try{ const d=localStorage.getItem('yv-planner-v2'); if(d) return JSON.parse(d); }catch(e){}
+  try{
+    const d=localStorage.getItem('yv-planner-v2');
+    if(d) return ensureDefaults(JSON.parse(d));
+  }catch(e){}
   return JSON.parse(JSON.stringify(SEED));
 }
 
@@ -535,10 +582,10 @@ async function loadData(){
     const res = await fetch(FB);
     if(res.ok){
       const d=await res.json();
-      if(d&&d.nism) return d;
+      if(d&&d.nism) return ensureDefaults(d);
     }
   }catch(e){}
-  // Firebase was empty — load from this browser and push it up so all devices sync
+  // Firebase blocked/empty — use local and push up
   const local = loadLocal();
   fetch(FB,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(local)}).catch(()=>{});
   return local;
@@ -915,49 +962,115 @@ const DEL_STAGES=[
   {key:'edit',   label:'Edit'},
   {key:'upload', label:'Upload'}
 ];
-
 const STATUS_C={active:'#34D399',negotiating:'#FBBF24',upcoming:'#3FB0FF',paused:'#94a3b8'};
+const VID_TYPE_L={review:'Review',sponsored:'Sponsored',tutorial:'Tutorial',unboxing:'Unboxing',comparison:'Compare',other:'Other'};
+const VID_TYPE_C={review:'b-blue',sponsored:'b-gold',tutorial:'b-purple',unboxing:'b-amber',comparison:'b-muted',other:'b-muted'};
+
+function daysLabel(dueDate, isDone){
+  if(!dueDate||isDone) return '';
+  const diff=Math.round((new Date(dueDate)-new Date())/(1000*60*60*24));
+  if(diff<0) return `<span style="color:#F87171;font-size:.68rem">⚠ Overdue by ${Math.abs(diff)}d</span>`;
+  if(diff===0) return `<span style="color:#FBBF24;font-size:.68rem">⚡ Due today!</span>`;
+  if(diff<=3) return `<span style="color:#FBBF24;font-size:.68rem">⏰ ${diff}d left</span>`;
+  return `<span style="color:var(--muted);font-size:.68rem">Due in ${diff}d · ${fmtDate(dueDate)}</span>`;
+}
 
 function renderBD(){
+  const now=new Date();
+  const thisMonth=now.getMonth(), thisYear=now.getFullYear();
+  let totalDone=0, monthDone=0, wip=0, overdue=0;
+
+  D.bd.brands.forEach(b=>{
+    (b.deliverables||[]).forEach(d=>{
+      const isDone=DEL_STAGES.every(s=>d.stages[s.key]);
+      const n=DEL_STAGES.filter(s=>d.stages[s.key]).length;
+      const due=d.dueDate?new Date(d.dueDate):null;
+      if(isDone){
+        totalDone++;
+        const uploaded=d.uploadedDate?new Date(d.uploadedDate):null;
+        if(uploaded&&uploaded.getMonth()===thisMonth&&uploaded.getFullYear()===thisYear) monthDone++;
+      } else {
+        if(n>0) wip++;
+        if(due&&due<now) overdue++;
+      }
+    });
+  });
+
+  el('bd-s-done').textContent=totalDone;
+  el('bd-s-month').textContent=monthDone;
+  el('bd-s-wip').textContent=wip;
+  el('bd-s-over').textContent=overdue;
+  el('bd-s-month-label').textContent=now.toLocaleDateString('en-IN',{month:'short',year:'numeric'});
+
   const c=el('brand-grid');
   if(!D.bd.brands.length){
     c.innerHTML=`<div class="empty" style="grid-column:1/-1"><div class="ei">🤝</div><p>No brands yet.</p></div>`;
     return;
   }
+
   c.innerHTML=D.bd.brands.map(b=>{
     const dels=b.deliverables||[];
     const done=dels.filter(d=>DEL_STAGES.every(s=>d.stages[s.key])).length;
+    const inprog=dels.filter(d=>{ const n=DEL_STAGES.filter(s=>d.stages[s.key]).length; return n>0&&n<5; }).length;
     const sc=STATUS_C[b.status]||'#94a3b8';
+    const totalPaid=dels.filter(d=>d.paid).reduce((s,d)=>s+(+d.payment||0),0);
+
     return `
     <div class="brand-card">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:11px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px">
         <div>
           <div style="font-size:1rem;font-weight:700;color:#fff">${esc(b.name)}</div>
-          <div style="font-size:.73rem;color:var(--muted);margin-top:2px">${esc(b.terms)}</div>
+          <div style="font-size:.72rem;color:var(--muted);margin-top:2px">${esc(b.terms)}</div>
         </div>
-        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px">
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
           <span class="badge" style="background:${sc}22;color:${sc}">${b.status}</span>
           <button class="btn btn-del btn-sm" onclick="delBrand('${b.id}')">Remove</button>
         </div>
       </div>
 
-      <div style="font-size:.7rem;color:var(--muted);margin-bottom:8px">
-        ${done}/${dels.length} deliverables complete
+      <!-- Brand stats row -->
+      <div style="display:flex;gap:10px;margin-bottom:10px;padding:8px;background:rgba(255,255,255,.02);border-radius:8px;flex-wrap:wrap">
+        <div style="text-align:center;flex:1">
+          <div style="font-size:1rem;font-weight:700;color:#34D399">${done}</div>
+          <div style="font-size:.6rem;color:var(--muted)">Delivered</div>
+        </div>
+        <div style="text-align:center;flex:1">
+          <div style="font-size:1rem;font-weight:700;color:#FFD066">${inprog}</div>
+          <div style="font-size:.6rem;color:var(--muted)">In Progress</div>
+        </div>
+        <div style="text-align:center;flex:1">
+          <div style="font-size:1rem;font-weight:700;color:#A78BFA">${dels.length}</div>
+          <div style="font-size:.6rem;color:var(--muted)">Total</div>
+        </div>
+        ${totalPaid>0?`<div style="text-align:center;flex:1">
+          <div style="font-size:.85rem;font-weight:700;color:#34D399">₹${totalPaid.toLocaleString('en-IN')}</div>
+          <div style="font-size:.6rem;color:var(--muted)">Earned</div>
+        </div>`:''}
       </div>
 
       ${dels.map(d=>{
         const n=DEL_STAGES.filter(s=>d.stages[s.key]).length;
         const pct=Math.round(n/5*100), isDone=n===5;
-        const now=new Date(), due=d.dueDate?new Date(d.dueDate):null;
-        const overdue=due&&due<now&&!isDone;
+        const isOverdue=d.dueDate&&new Date(d.dueDate)<now&&!isDone;
+        const typeLabel=VID_TYPE_L[d.type]||'Video';
+        const typeClass=VID_TYPE_C[d.type]||'b-muted';
         return `
-        <div style="margin-bottom:9px;padding:9px;background:rgba(255,255,255,.02);border-radius:8px;border:1px solid ${isDone?'rgba(52,211,153,.2)':overdue?'rgba(248,113,113,.2)':'var(--border)'}">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px">
-            <div style="font-size:.81rem;font-weight:600;color:${isDone?'#34D399':overdue?'#F87171':'#fff'}">${esc(d.title)}</div>
-            <button onclick="delDel('${b.id}','${d.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem">×</button>
+        <div style="margin-bottom:9px;padding:10px;background:rgba(255,255,255,.02);border-radius:8px;
+             border:1px solid ${isDone?'rgba(52,211,153,.2)':isOverdue?'rgba(248,113,113,.25)':'var(--border)'}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:5px">
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
+                <span class="badge ${typeClass}">${typeLabel}</span>
+                ${isDone&&d.paid?'<span class="badge b-green">Paid ✓</span>':''}
+                ${isDone&&!d.paid&&d.payment?`<button onclick="markPaid('${b.id}','${d.id}')" class="badge" style="background:rgba(52,211,153,.1);color:#34D399;border:1px solid rgba(52,211,153,.3);cursor:pointer">Mark Paid</button>`:''}
+              </div>
+              <div style="font-size:.83rem;font-weight:600;color:${isDone?'#34D399':isOverdue?'#F87171':'#fff'};margin-top:4px">${esc(d.title)}</div>
+              <div style="margin-top:3px">${daysLabel(d.dueDate,isDone)}</div>
+              ${d.payment?`<div style="font-size:.68rem;color:var(--muted);margin-top:2px">₹${(+d.payment).toLocaleString('en-IN')} ${d.paid?'· received':'· pending'}</div>`:''}
+            </div>
+            <button onclick="delDel('${b.id}','${d.id}')" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:.95rem;padding:2px;flex-shrink:0;margin-left:6px">×</button>
           </div>
-          ${d.dueDate?`<div style="font-size:.68rem;color:${overdue?'#F87171':'var(--muted)'};margin-bottom:5px">${overdue?'⚠ Overdue · ':'Due: '}${fmtDate(d.dueDate)}</div>`:''}
-          <div class="pbar" style="margin:3px 0 6px"><div class="pfill g" style="width:${pct}%"></div></div>
+          <div class="pbar" style="margin:5px 0"><div class="pfill g" style="width:${pct}%"></div></div>
           <div class="stages" style="margin-top:5px">
             ${DEL_STAGES.map(s=>`
               <div class="sp ${d.stages[s.key]?'done':'pending'}" onclick="toggleDel('${b.id}','${d.id}','${s.key}')">
@@ -1012,7 +1125,20 @@ function toggleDel(brandId, delId, stage){
   const b=D.bd.brands.find(x=>x.id===brandId); if(!b) return;
   const d=(b.deliverables||[]).find(x=>x.id===delId); if(!d) return;
   d.stages[stage]=!d.stages[stage];
-  if(stage==='upload'&&d.stages[stage]){ log(`Delivered "${d.title}" for ${b.name}`,'complete'); toast('Deliverable done! 🤝'); }
+  if(stage==='upload'&&d.stages[stage]){
+    d.uploadedDate=new Date().toISOString();
+    log(`Delivered "${d.title}" for ${b.name}`,'complete');
+    toast('Deliverable uploaded! 🤝');
+  }
+  save(); renderBD(); renderDash();
+}
+
+function markPaid(brandId, delId){
+  const b=D.bd.brands.find(x=>x.id===brandId); if(!b) return;
+  const d=(b.deliverables||[]).find(x=>x.id===delId); if(!d) return;
+  d.paid=true;
+  log(`Payment received: "${d.title}" from ${b.name}${d.payment?' — ₹'+d.payment:''}`,'complete');
+  toast('Payment marked! 💰');
   save(); renderBD(); renderDash();
 }
 
@@ -1129,13 +1255,19 @@ el('save-del').onclick=()=>{
   if(!title) return alert('Enter a title');
   const b=D.bd.brands.find(x=>x.id===_brandForDel); if(!b) return;
   b.deliverables.push({
-    id:uid(),title,dueDate:el('del-due').value,notes:el('del-notes').value.trim(),
+    id:uid(), title,
+    type:el('del-type').value,
+    dueDate:el('del-due').value,
+    payment:el('del-payment').value||'',
+    paid:false,
+    notes:el('del-notes').value.trim(),
     stages:{concept:false,script:false,shoot:false,edit:false,upload:false},
     addedDate:new Date().toISOString()
   });
   log(`Added deliverable "${title}" for ${b.name}`,'update');
   save(); renderBD(); renderDash(); closeM('m-del');
-  ['del-title','del-due','del-notes'].forEach(id=>el(id).value='');
+  ['del-title','del-due','del-payment','del-notes'].forEach(id=>el(id).value='');
+  el('del-type').value='review';
   _brandForDel=null;
   toast('Deliverable added!');
 };
