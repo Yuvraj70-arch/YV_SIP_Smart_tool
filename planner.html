@@ -561,6 +561,7 @@ const SEED = {
 
 function ensureDefaults(d){
   if(!d.bd||!d.bd.brands||!d.bd.brands.length) d.bd=JSON.parse(JSON.stringify(SEED.bd));
+  else d.bd.brands.forEach(b=>{ if(!Array.isArray(b.deliverables)) b.deliverables=[]; });
   if(!d.notes) d.notes=[];
   if(!d.activity) d.activity=[];
   if(!d.nism) d.nism={chapters:[]};
@@ -1254,6 +1255,7 @@ el('save-del').onclick=()=>{
   const title=el('del-title').value.trim();
   if(!title) return alert('Enter a title');
   const b=D.bd.brands.find(x=>x.id===_brandForDel); if(!b) return;
+  if(!Array.isArray(b.deliverables)) b.deliverables=[];
   b.deliverables.push({
     id:uid(), title,
     type:el('del-type').value,
