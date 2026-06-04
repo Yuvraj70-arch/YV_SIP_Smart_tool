@@ -565,8 +565,14 @@ function ensureDefaults(d){
   if(!d.notes) d.notes=[];
   if(!d.activity) d.activity=[];
   if(!d.nism) d.nism={chapters:[]};
+  else if(!Array.isArray(d.nism.chapters)) d.nism.chapters=[];
   if(!d.yv) d.yv={videos:[]};
+  else if(!Array.isArray(d.yv.videos)) d.yv.videos=[];
   if(!d.mb) d.mb={episodes:[],longVideos:[]};
+  else {
+    if(!Array.isArray(d.mb.episodes)) d.mb.episodes=[];
+    if(!Array.isArray(d.mb.longVideos)) d.mb.longVideos=[];
+  }
   return d;
 }
 
@@ -611,6 +617,7 @@ let D = JSON.parse(JSON.stringify(SEED));
 let cOverall, cSections;
 
 function initCharts(){
+  if(cOverall) return;
   cOverall = new Chart(document.getElementById('c-overall'),{
     type:'doughnut',
     data:{
@@ -711,10 +718,13 @@ function renderDash(){
   el('s-wip').textContent=st.wip;
   el('s-todo').textContent=st.todo;
 
-  cOverall.data.datasets[0].data=[st.done,st.wip,Math.max(0,st.todo)];
-  cOverall.update();
-  cSections.data.datasets[0].data=[st.n.pct,st.y.pct,st.m.pct,st.b.pct];
-  cSections.update();
+  try{
+    if(!cOverall||!cSections) initCharts();
+    cOverall.data.datasets[0].data=[st.done,st.wip,Math.max(0,st.todo)];
+    cOverall.update();
+    cSections.data.datasets[0].data=[st.n.pct,st.y.pct,st.m.pct,st.b.pct];
+    cSections.update();
+  }catch(e){}
 
   // Breakdown bars
   const secs=[
@@ -1319,15 +1329,18 @@ function esc(s){
 }
 
 // ══════════════════ BOOT ══════════════════
-function renderAll(){ renderDash();renderNism();renderYV();renderMB();renderBD(); }
+function renderAll(){ renderNism();renderYV();renderMB();renderBD();renderDash(); }
 
 async function init(){
   D = await loadData();
   localStorage.setItem('yv-planner-v2', JSON.stringify(D));
   document.getElementById('loading').style.display='none';
-  initCharts();
-  renderAll();
-  syncDot('✓ Loaded','#34D399');
+  // requestAnimationFrame lets the browser finish layout before Chart.js measures canvases
+  requestAnimationFrame(()=>{
+    initCharts();
+    renderAll();
+    syncDot('✓ Loaded','#34D399');
+  });
 
   // Auto-sync every 30 seconds — pull fresh data from cloud
   setInterval(async()=>{
@@ -1336,7 +1349,7 @@ async function init(){
       if(res.ok){
         const fresh=await res.json();
         if(fresh&&fresh.nism&&JSON.stringify(fresh)!==JSON.stringify(D)){
-          D=fresh;
+          D=ensureDefaults(fresh);
           localStorage.setItem('yv-planner-v2',JSON.stringify(D));
           renderAll();
           syncDot('↻ Updated','#3FB0FF');
